@@ -690,6 +690,7 @@ export class BpmnEditor extends CachedComponent {
 
     const {
       onAction,
+      onOpenEngineProfile
     } = props;
 
     // TODO @pinussilvestrus: ignore plugins for now
@@ -703,7 +704,10 @@ export class BpmnEditor extends CachedComponent {
 
     const modeler = new BpmnModeler({
       ...options,
-      position: 'absolute'
+      position: 'absolute',
+      designPropertiesProvider: {
+        openEngineProfile: onOpenEngineProfile
+      }
     });
 
     const commandStack = modeler.get('commandStack');
