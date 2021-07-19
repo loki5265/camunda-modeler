@@ -26,7 +26,9 @@ import { active as isInputActive } from '../../../util/dom/isInput';
 
 import { FormEditor as Form } from './editor/FormEditor';
 
-import { isFunction } from 'min-dash';
+import { EngineProfile } from '../EngineProfile';
+
+import { isFunction, isUndefined } from 'min-dash';
 
 export class FormEditor extends CachedComponent {
   constructor(props) {
@@ -141,7 +143,22 @@ export class FormEditor extends CachedComponent {
         lastSchema: null
       });
     } else {
+      const {
+        executionPlatform,
+        executionPlatformVersion
+      } = form._state.schema;
+
+      let engineProfile = null;
+
+      if (!isUndefined(executionPlatform)) {
+        engineProfile = {
+          executionPlatform,
+          executionPlatformVersion
+        };
+      }
+
       this.setCached({
+        engineProfile,
         lastSchema: schema,
         stackIdx
       });
@@ -238,7 +255,21 @@ export class FormEditor extends CachedComponent {
     }
   }
 
+  setEngineProfile = (engineProfile) => {
+    const { form } = this.getCached();
+
+    const root = form._state.schema;
+
+    const modeling = form.get('modeling');
+
+    modeling.editFormField(root, engineProfile);
+
+    this.setCached({ engineProfile });
+  }
+
   render() {
+    const { engineProfile = null } = this.getCached();
+
     const { importing } = this.state;
 
     return (
@@ -250,6 +281,8 @@ export class FormEditor extends CachedComponent {
           onFocus={ this.handleChanged }
           ref={ this.ref }
         ></div>
+
+        <EngineProfile type="form" engineProfile={ engineProfile } setEngineProfile={ this.setEngineProfile } />
       </div>
     );
   }
