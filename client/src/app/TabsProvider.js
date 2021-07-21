@@ -17,6 +17,7 @@ import form from './tabs/form/initial.form';
 import replaceIds from '@bpmn-io/replace-ids';
 
 import {
+  isString,
   sortBy
 } from 'min-dash';
 
@@ -39,6 +40,12 @@ import {
   Flags,
   generateId
 } from '../util';
+
+import { Linter } from 'bpmnlint';
+
+import BpmnModdle from 'bpmn-moddle';
+
+import StaticResolver from 'bpmnlint/lib/resolver/static-resolver';
 
 const createdByType = {};
 
@@ -77,6 +84,105 @@ const NAMESPACE_URL_ZEEBE = 'http://camunda.org/schema/zeebe/1.0';
 const DEFAULT_PRIORITY = 1000;
 
 const HIGHER_PRIORITY = 1001;
+
+const formLinter = {
+  lint(contents) {
+    let schema;
+
+    if (isString(contents)) {
+      schema = JSON.parse(contents);
+    } else {
+      schema = contents;
+    }
+
+    const {
+      executionPlatform,
+      executionPlatformVersion
+    } = schema;
+
+    if (!executionPlatform) {
+      return [];
+    }
+
+    const types = [
+      'button',
+      'default',
+      'textfield'
+    ];
+
+    if ((executionPlatform === 'Camunda Platform' && executionPlatformVersion === '7.16')
+      || (executionPlatform === 'Camunda Cloud' && executionPlatformVersion === '1.1')) {
+      types.push(
+        'checkbox',
+        'number',
+        'radio',
+        'select',
+        'text'
+      );
+    }
+
+    return schema.components.reduce((results, formField) => {
+      const {
+        id,
+        type
+      } = formField;
+
+      if (!types.includes(type)) {
+        results.push({
+          id: id,
+          message: `Form field of type <${ type }> not supported in ${ executionPlatform } ${ executionPlatformVersion }.`
+        });
+      } else if (formField.values && !formField.values.length) {
+        results.push({
+          id: id,
+          property: 'values',
+          message: `Form field of <${ type }> has no configured values.`
+        });
+      }
+
+      return results;
+    }, []);
+  }
+};
+
+const moddle = new BpmnModdle();
+
+const linter = new Linter({
+  resolver: new StaticResolver({
+    'rule:bpmnlint-plugin-camunda-platform/camunda-platform-7-15': () => {
+      return {
+        check: (node, reporter) => {
+          if (node.$instanceOf(node, 'bpmn:UserTask')) {
+            reporter.report(node.id || node.$type, 'User task bad');
+          }
+        }
+      };
+    }
+  }),
+  config: {
+    rules: {
+      'camunda-platform/camunda-platform-7-15': 'error'
+    }
+  }
+});
+
+const bpmnLinter = {
+  async lint(contents) {
+    let definitions;
+
+    if (isString(contents)) {
+      const { rootElement } = await moddle.fromXML(contents);
+
+      definitions = rootElement;
+    } else {
+      definitions = contents;
+    }
+
+    const results = await linter.lint(definitions);
+
+    return Object.values(results).reduce((results, result) => [ ...results, ...result ], []);
+  }
+};
 
 
 /**
@@ -145,6 +251,9 @@ export default class TabsProvider {
             label: 'Create new BPMN Diagram (Camunda Platform)',
             action: 'create-bpmn-diagram'
           };
+        },
+        getLinter() {
+          return bpmnLinter;
         }
       },
       'cloud-bpmn': {
@@ -342,6 +451,9 @@ export default class TabsProvider {
             label: 'Create new Form (Camunda Platform or Cloud)',
             action: 'create-form'
           };
+        },
+        getLinter() {
+          return formLinter;
         }
       }
     };

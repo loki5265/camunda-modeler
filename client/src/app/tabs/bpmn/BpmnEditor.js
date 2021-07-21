@@ -100,6 +100,7 @@ const COLORS = [{
   stroke: 'rgb(142, 36, 170)'
 }];
 
+const LOW_PRIORITY = 500;
 const engineProfile = {
   executionPlatform: 'Camunda Platform'
 };
@@ -116,6 +117,8 @@ export class BpmnEditor extends CachedComponent {
     this.propertiesPanelRef = React.createRef();
 
     this.handleResize = debounce(this.handleResize);
+
+    this.handleLinting = debounce(this.handleLinting.bind(this), 300);
   }
 
   async componentDidMount() {
@@ -192,6 +195,8 @@ export class BpmnEditor extends CachedComponent {
     ].forEach((event) => {
       modeler[fn](event, this.handleChanged);
     });
+
+    modeler[fn]('commandStack.changed', LOW_PRIORITY, this.handleLinting);
 
     modeler[fn]('elementTemplates.errors', this.handleElementTemplateErrors);
 
@@ -420,6 +425,12 @@ export class BpmnEditor extends CachedComponent {
     this.setState(newState);
   }
 
+  handleLinting = () => {
+    const definitions = this.getModeler().getDefinitions();
+
+    this.props.onAction('lint', { contents: definitions });
+  }
+
   isDirty() {
     const {
       modeler,
@@ -632,8 +643,12 @@ export class BpmnEditor extends CachedComponent {
       return this.loadTemplates();
     }
 
+    const editorActions = modeler.get('editorActions');
+
     // TODO(nikku): handle all editor actions
-    return modeler.get('editorActions').trigger(action, context);
+    if (editorActions.isRegistered(action)) {
+      return editorActions.trigger(action, context);
+    }
   }
 
   handleSetColor = (fill, stroke) => {
