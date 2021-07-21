@@ -123,7 +123,7 @@ const formLinter = {
 
     return schema.components.reduce((results, formField) => {
       const {
-        id,
+        _id: id,
         type
       } = formField;
 

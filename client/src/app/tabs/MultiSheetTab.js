@@ -368,6 +368,7 @@ export class MultiSheetTab extends CachedComponent {
       id,
       xml,
       layout,
+      onAction,
       tab
     } = this.props;
 
@@ -415,6 +416,10 @@ export class MultiSheetTab extends CachedComponent {
           onSelect={ this.switchSheet }
         />
 
+        { tab.type === 'form'
+          ? <Linting tab={ tab } onAction={ onAction } />
+          : null
+        }
       </div>
     );
   }
@@ -422,7 +427,6 @@ export class MultiSheetTab extends CachedComponent {
 }
 
 export default WithCache(WithCachedState(MultiSheetTab));
-
 
 function SheetSwitch(props) {
   const {
@@ -448,6 +452,35 @@ function SheetSwitch(props) {
         title={ `Toggle ${fallbackProvider.defaultName}` }
       >
         { fallbackProvider.defaultName }
+      </button>
+    </Fill>
+  );
+}
+
+function Linting(props) {
+  const {
+    tab,
+    onAction
+  } = props;
+
+  const { linting = {} } = tab;
+
+  const {
+    errors = 0,
+    warnings = 0
+  } = linting;
+
+  return (
+    <Fill slot="status-bar__file" group="2_linting">
+      <button
+        className="btn"
+        onClick={ () => onAction('toggleLog') }
+        title="Toggle Linting"
+      >
+        <svg style={ { marginRight: '4px' } } height="12px" class="svg-inline--fa fa-exclamation-circle fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill={ errors > 0 ? 'rgb(255, 61, 61)' : 'currentColor' } d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"></path></svg>
+        { errors }
+        <svg style={ { marginLeft: '6px', marginRight: '4px' } } height="12px" class="svg-inline--fa fa-exclamation-triangle fa-w-18" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill={ warnings > 0 ? 'rgb(255, 61, 61)' : 'currentColor' } d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"></path></svg>
+        { warnings }
       </button>
     </Fill>
   );

@@ -17,6 +17,7 @@ import {
   debounce,
   forEach,
   isString,
+  isUndefined,
   reduce
 } from 'min-dash';
 
@@ -844,6 +845,7 @@ export class App extends PureComponent {
   }
 
   lintTab = async (tab, contents) => {
+    if (tab.type !== 'form') return;
     const { tabsProvider } = this.props;
 
     const tabProvider = tabsProvider.getProvider(tab.type);
@@ -864,10 +866,15 @@ export class App extends PureComponent {
 
     const results = await linter.lint(contents);
 
+    tab.linting = {
+      errors: results.length,
+      warnings: 0
+    };
+
     this.clearLog();
 
     if (results.length) {
-      this.logEntry(tab.file.path || tab.file.name);
+      // this.logEntry(tab.file.path || tab.file.name);
 
       results.forEach(({ id, property, message }) => {
         this.logEntry(`${ id }${ property ? `#${ property }`: '' } : ${ message }`, null, () => this.triggerAction('selectElement', { id, property }));
@@ -1141,7 +1148,7 @@ export class App extends PureComponent {
    * @param {string} action - Action to be triggered.
    */
   logEntry(message, category, action) {
-    this.toggleLog(true);
+    // this.toggleLog(true);
 
     const logEntry = {
       category,
@@ -1421,6 +1428,10 @@ export class App extends PureComponent {
   };
 
   toggleLog = (open) => {
+    if (isUndefined(open)) {
+      open = !this.state.layout.log.open;
+    }
+
     this.handleLayoutChanged({
       log: {
         ...this.state.layout.log,
@@ -1593,7 +1604,7 @@ export class App extends PureComponent {
     return this.getGlobal('dialog').show(options);
   }
 
-  triggerAction = failSafe((action, options) => {
+  triggerAction = failSafe((action, options = {}) => {
 
     const {
       activeTab
@@ -1739,6 +1750,12 @@ export class App extends PureComponent {
       } = options;
 
       return this.logEntry(message, category, action);
+    }
+
+    if (action === 'toggleLog') {
+      const { open } = options;
+
+      return this.toggleLog(open);
     }
 
     if (action === 'display-notification') {

@@ -28,14 +28,12 @@ import { FormEditor as Form } from './editor/FormEditor';
 
 import {
   debounce,
-  isFunction
+  isFunction,
+  isUndefined
 } from 'min-dash';
+
 import { EngineProfile } from '../EngineProfile';
 
-const LOW_PRIORITY = 500;
-
-
-import { isFunction, isUndefined } from 'min-dash';
 
 export class FormEditor extends CachedComponent {
   constructor(props) {
