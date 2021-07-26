@@ -31,8 +31,10 @@ import {
 import { FormEditor as FormEditorMock } from 'test/mocks/form-js';
 
 import schemaJSON from './form.json';
+import engineProfileSchemaJSON from './engine-profile.json';
 
-const schema = JSON.stringify(schemaJSON, null, 2);
+const schema = JSON.stringify(schemaJSON, null, 2),
+      engineProfileSchema = JSON.stringify(engineProfileSchemaJSON, null, 2);
 
 const { spy } = sinon;
 
@@ -484,6 +486,59 @@ describe('<FormEditor>', function() {
       const dirty = instance.isDirty();
 
       expect(dirty).to.be.false;
+    });
+
+  });
+
+
+  describe('engine profile', function() {
+
+    it('should show engine profile (no engine profile)', function(done) {
+
+      let instance,
+          wrapper;
+
+      // when
+      renderEditor(schema).then((result) => {
+        instance = result.instance;
+        wrapper = result.wrapper;
+      });
+
+      process.nextTick(() => {
+
+        // then
+        expect(wrapper.find('EngineProfile').exists()).to.be.true;
+
+        expect(instance.getCached().engineProfile).to.be.null;
+
+        done();
+      });
+    });
+
+
+    it('should show engine profile (Camunda Platform 7.15)', function(done) {
+
+      let instance,
+          wrapper;
+
+      // when
+      renderEditor(engineProfileSchema).then((result) => {
+        instance = result.instance;
+        wrapper = result.wrapper;
+      });
+
+      process.nextTick(() => {
+
+        // then
+        expect(wrapper.find('EngineProfile').exists()).to.be.true;
+
+        expect(instance.getCached().engineProfile).to.eql({
+          executionPlatform: 'Camunda Platform',
+          executionPlatformVersion: '7.15'
+        });
+
+        done();
+      });
     });
 
   });
