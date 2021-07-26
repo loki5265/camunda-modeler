@@ -217,6 +217,10 @@ describe('<BpmnEditor>', function() {
 
     async function onImport() {
 
+      expect(true).to.be.false;
+
+      throw new Error();
+
       // when
       const xml = await instance.getXML();
 
@@ -1494,6 +1498,20 @@ describe('<BpmnEditor>', function() {
 
       expect(modelerCreatedEvent).to.exist;
       expect(payload.modeler).to.eql(modeler);
+    });
+
+  });
+
+
+  describe('engine profile', function() {
+
+    it('should show engine profile (no engine profile)', async function() {
+
+      // when
+      const { wrapper } = await renderEditor(diagramXML);
+
+      // then
+      expect(wrapper.find('EngineProfile').exists()).to.be.true;
     });
 
   });
